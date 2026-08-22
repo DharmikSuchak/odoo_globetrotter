@@ -138,7 +138,7 @@ export default function AdminDashboardPage() {
                 <StatCard label="Total Users"          value={analytics.totalUsers} />
                 <StatCard label="Total Trips"          value={analytics.totalTrips} />
                 <StatCard label="Shared Trips"         value={analytics.sharedTrips} accent="text-sky-600" />
-                <StatCard label="Avg. Trip Budget"     value={`$${analytics.avgBudget.toLocaleString()}`} />
+                <StatCard label="Avg. Trip Budget"     value={`₹${analytics.avgBudget.toLocaleString()}`} />
               </>
             ) : null}
           </div>

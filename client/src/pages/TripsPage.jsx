@@ -87,7 +87,7 @@ export default function TripsPage() {
                       {trip.startDate ? new Date(trip.startDate).toLocaleDateString() : 'Dates TBD'}
                       {trip.endDate && ` - ${new Date(trip.endDate).toLocaleDateString()}`}
                     </span>
-                    {trip.budget && <span>Budget: ${trip.budget.toLocaleString()}</span>}
+                    {trip.budget && <span>Budget: ₹{trip.budget.toLocaleString()}</span>}
                   </div>
                 </div>
               </div>

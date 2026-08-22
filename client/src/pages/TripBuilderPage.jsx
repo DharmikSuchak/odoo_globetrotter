@@ -381,7 +381,7 @@ export default function TripBuilderPage() {
                           {act.name}
                         </p>
                         <p className="text-xs text-slate-500 mt-1 pl-4">
-                          Day {act.day || 1} · {act.category} · {act.durationHours}h · ${act.cost}
+                          Day {act.day || 1} · {act.category} · {act.durationHours}h · ₹{act.cost}
                         </p>
                       </div>
                       <button onClick={() => deleteActivity(act.id)} className="text-slate-300 hover:text-red-500 text-xl">&times;</button>
@@ -518,7 +518,7 @@ export default function TripBuilderPage() {
                         <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-medium rounded-md mb-2">
                           {act.category}
                         </span>
-                        <p className="text-sm font-medium text-slate-700">${act.cost} · {act.durationHours} hrs</p>
+                        <p className="text-sm font-medium text-slate-700">₹{act.cost} · {act.durationHours} hrs</p>
                       </div>
                     </div>
                   ))}
@@ -563,11 +563,11 @@ export default function TripBuilderPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
             <p className="text-sm text-slate-500 font-medium mb-1">Total Budget</p>
-            <p className="font-display font-bold text-3xl text-slate-800">${budgetData.budget.toLocaleString()}</p>
+            <p className="font-display font-bold text-3xl text-slate-800">₹{budgetData.budget.toLocaleString()}</p>
           </div>
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
             <p className="text-sm text-slate-500 font-medium mb-1">Total Spent</p>
-            <p className="font-display font-bold text-3xl text-sky-600">${budgetData.totalSpent.toLocaleString()}</p>
+            <p className="font-display font-bold text-3xl text-sky-600">₹{budgetData.totalSpent.toLocaleString()}</p>
             
             {/* Progress Bar */}
             <div className="mt-3 w-full bg-slate-100 rounded-full h-2 overflow-hidden">
@@ -580,7 +580,7 @@ export default function TripBuilderPage() {
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
             <p className="text-sm text-slate-500 font-medium mb-1">Remaining</p>
             <p className={`font-display font-bold text-3xl ${budgetData.remaining < 0 ? 'text-red-500' : 'text-slate-800'}`}>
-              ${budgetData.remaining.toLocaleString()}
+              ₹{budgetData.remaining.toLocaleString()}
             </p>
           </div>
         </div>
@@ -606,7 +606,7 @@ export default function TripBuilderPage() {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => `$${value}`} />
+                    <Tooltip formatter={(value) => `₹${value}`} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
@@ -622,7 +622,7 @@ export default function TripBuilderPage() {
               {Object.entries(budgetData.spentByDay).map(([dayKey, amount]) => (
                 <div key={dayKey} className="flex justify-between items-center border-b border-slate-100 pb-2">
                   <span className="text-sm font-medium text-slate-600">{dayKey}</span>
-                  <span className="font-semibold text-slate-800">${amount}</span>
+                  <span className="font-semibold text-slate-800">₹{amount}</span>
                 </div>
               ))}
               {Object.keys(budgetData.spentByDay).length === 0 && (

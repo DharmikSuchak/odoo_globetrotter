@@ -1,6 +1,4 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
 
 // ── Destination data for the animated cards ───────────────────────────────────
 const destinations = [
@@ -44,46 +42,6 @@ const features = [
     desc: "Visual day-by-day view of your entire trip with activity blocks.",
   },
 ];
-
-// ── Status badge component ────────────────────────────────────────────────────
-function ApiStatusBadge() {
-  const [status, setStatus] = useState("checking"); // checking | online | offline
-  const [msg, setMsg] = useState("");
-
-  useEffect(() => {
-    axios
-      .get("/api/health")
-      .then((res) => {
-        setStatus("online");
-        setMsg(res.data.message);
-      })
-      .catch(() => {
-        setStatus("offline");
-        setMsg("API unreachable");
-      });
-  }, []);
-
-  const colors = {
-    checking: "text-yellow-400 bg-yellow-400/10 border-yellow-400/20",
-    online: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
-    offline: "text-red-400 bg-red-400/10 border-red-400/20",
-  };
-
-  const dots = {
-    checking: "bg-yellow-400 animate-pulse",
-    online: "bg-emerald-400 online",
-    offline: "bg-red-400",
-  };
-
-  return (
-    <div
-      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium ${colors[status]}`}
-    >
-      <span className={`status-dot ${dots[status]}`} />
-      {status === "checking" ? "Checking API..." : msg || status}
-    </div>
-  );
-}
 
 // ── Destination card ──────────────────────────────────────────────────────────
 function DestinationCard({ city, country, emoji, cost, tag, delay }) {
@@ -138,7 +96,6 @@ export default function LandingPage() {
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <ApiStatusBadge />
           <Link id="nav-login-btn" to="/login" className="btn-ghost text-sm py-2 px-4 inline-block">
             Log in
           </Link>
