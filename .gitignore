@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+.npm
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Build output
+dist/
+build/
+.vite/
+
+# Prisma
+server/prisma/*.db
+server/prisma/*.db-journal
+server/prisma/migrations/*.sql.bak
+
+# Docker
+.docker/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/

@@ -1,0 +1,115 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ─────────────────────────────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ActivityCategory {
+  SIGHTSEEING
+  FOOD
+  ADVENTURE
+  RELAXATION
+  SHOPPING
+  CULTURE
+  NIGHTLIFE
+}
+
+// ── Models ────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  trips Trip[]
+
+  @@map("users")
+}
+
+model Trip {
+  id          String    @id @default(cuid())
+  userId      String
+  name        String
+  startDate   DateTime?
+  endDate     DateTime?
+  description String?
+  budget      Float?
+  isPublic    Boolean   @default(false)
+  shareSlug   String?   @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stops Stop[]
+
+  @@map("trips")
+}
+
+model Stop {
+  id        String    @id @default(cuid())
+  tripId    String
+  cityId    String
+  startDate DateTime?
+  endDate   DateTime?
+  order     Int       @default(0)
+  createdAt DateTime  @default(now())
+
+  trip       Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  city       City       @relation(fields: [cityId], references: [id])
+  activities Activity[]
+
+  @@map("stops")
+}
+
+model City {
+  id          String  @id @default(cuid())
+  name        String
+  country     String
+  countryCode String  @default("")
+  costIndex   Float   // 1 = cheapest, 10 = most expensive (relative scale)
+  latitude    Float?
+  longitude   Float?
+  imageUrl    String?
+  description String?
+  createdAt   DateTime @default(now())
+
+  stops Stop[]
+
+  @@unique([name, country])
+  @@map("cities")
+}
+
+model Activity {
+  id            String           @id @default(cuid())
+  stopId        String?          // nullable — catalog items have no stop
+  name          String
+  category      ActivityCategory
+  cost          Float            @default(0)
+  durationHours Float            @default(1)
+  day           Int?             // which day of the stop (1-indexed)
+  description   String?
+  imageUrl      String?
+  createdAt     DateTime         @default(now())
+
+  stop Stop? @relation(fields: [stopId], references: [id], onDelete: Cascade)
+
+  @@map("activities")
+}
