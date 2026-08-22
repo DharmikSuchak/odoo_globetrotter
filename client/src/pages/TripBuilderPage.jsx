@@ -18,12 +18,20 @@ export default function TripBuilderPage() {
   const [activityQuery, setActivityQuery] = useState("");
   const [activityResults, setActivityResults] = useState([]);
 
-  // Itinerary & Budget State
+  // Itinerary, Budget & Health State
   const [itinerary, setItinerary] = useState([]);
   const [budgetData, setBudgetData] = useState(null);
+  const [healthData, setHealthData] = useState(null);
+  
+  // AI State
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState(null);
+  const [aiError, setAiError] = useState("");
 
   useEffect(() => {
     fetchTrip();
+    fetchHealth();
   }, [id]);
 
   useEffect(() => {
@@ -59,6 +67,62 @@ export default function TripBuilderPage() {
       setBudgetData(data.data);
     } catch (err) {
       console.error("Failed to load budget", err);
+    }
+  }
+
+  async function fetchHealth() {
+    try {
+      const { data } = await axios.get(`/api/trips/${id}/health`);
+      setHealthData(data.health);
+    } catch (err) {
+      console.error("Failed to load health data", err);
+    }
+  }
+
+  // ── AI Handlers ────────────────────────────────────────────────────────────
+  
+  async function handleAiGenerate() {
+    try {
+      setIsGenerating(true);
+      setAiError("");
+      await axios.post(`/api/trips/${id}/ai-generate`);
+      await fetchTrip();
+      await fetchHealth();
+      setActiveTab("itinerary");
+    } catch (err) {
+      setAiError(err.response?.data?.message || "AI Generation failed. Check your API key.");
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  async function handleAiOptimize() {
+    try {
+      setIsOptimizing(true);
+      setAiError("");
+      setAiSuggestion(null);
+      const warnings = healthData?.recommendations || [];
+      const { data } = await axios.post(`/api/trips/${id}/ai-optimize`, { warnings });
+      setAiSuggestion(data.suggestion);
+    } catch (err) {
+      setAiError(err.response?.data?.message || "AI Optimization failed. Check your API key.");
+    } finally {
+      setIsOptimizing(false);
+    }
+  }
+
+  async function applyAiSuggestion() {
+    if (!aiSuggestion || aiSuggestion.action !== 'move') return;
+    try {
+      await axios.put(`/api/activities/${aiSuggestion.activityId}`, {
+        day: aiSuggestion.newDay
+      });
+      setAiSuggestion(null);
+      await fetchTrip();
+      await fetchHealth();
+      if (activeTab === "itinerary") await fetchItinerary();
+    } catch (err) {
+      alert("Failed to apply suggestion");
     }
   }
 
@@ -118,6 +182,7 @@ export default function TripBuilderPage() {
       setActivityResults([]);
       setActiveStopId(null);
       fetchTrip();
+      fetchHealth(); // refresh health score
     } catch (err) {
       console.error(err);
       alert("Failed to add activity");
@@ -129,6 +194,7 @@ export default function TripBuilderPage() {
     try {
       await axios.delete(`/api/activities/${activityId}`);
       fetchTrip();
+      fetchHealth();
     } catch (err) {
       console.error(err);
       alert("Failed to delete activity");
@@ -138,11 +204,117 @@ export default function TripBuilderPage() {
   if (loading) return <div className="text-slate-500 animate-pulse">Loading trip...</div>;
   if (error || !trip) return <div className="text-red-500">{error || "Trip not found"}</div>;
 
+  // Has stops but no activities? Show generate prompt
+  const canAiGenerate = trip.stops.length > 0 && !trip.stops.some(s => s.activities.length > 0);
+
   // ── Render Views ────────────────────────────────────────────────────────────
+
+  const renderHealthCard = () => {
+    if (!healthData) return null;
+    const isGood = healthData.score >= 80;
+    const isWarn = healthData.score >= 50 && healthData.score < 80;
+    const isDanger = healthData.score < 50;
+
+    return (
+      <div className={`mb-8 p-6 rounded-2xl border flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm
+        ${isGood ? 'bg-[#dcfce7] border-[#4ade80]' : isWarn ? 'bg-[#fef3c7] border-[#fbbf24]' : 'bg-[#fee2e2] border-[#f87171]'}
+      `}>
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <h3 className={`font-display font-bold text-3xl ${isGood ? 'text-[#15803d]' : isWarn ? 'text-[#b45309]' : 'text-[#dc2626]'}`}>
+              {healthData.score}/100
+            </h3>
+            <span className={`px-2 py-1 rounded text-xs font-bold ${isGood ? 'bg-[#15803d] text-white' : isWarn ? 'bg-[#b45309] text-white' : 'bg-[#dc2626] text-white'}`}>
+              Trip Health
+            </span>
+          </div>
+          {healthData.recommendations.length === 0 ? (
+            <p className={`text-sm ${isGood ? 'text-[#15803d]' : 'text-slate-700'}`}>Looking great! Your itinerary is perfectly balanced.</p>
+          ) : (
+            <ul className="text-sm space-y-1 mt-2">
+              {healthData.recommendations.map((rec, i) => (
+                <li key={i} className={`flex items-start gap-2 ${isGood ? 'text-[#15803d]' : isWarn ? 'text-[#b45309]' : 'text-[#dc2626]'}`}>
+                  <span>•</span> {rec}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        
+        {activeTab === "itinerary" && (
+          <button 
+            onClick={handleAiOptimize}
+            disabled={isOptimizing}
+            className={`px-5 py-2.5 rounded-xl font-semibold shadow-sm transition-transform active:scale-95 flex items-center gap-2
+              ${isGood ? 'bg-[#15803d] text-white hover:bg-[#166534]' : isWarn ? 'bg-[#b45309] text-white hover:bg-[#92400e]' : 'bg-[#dc2626] text-white hover:bg-[#b91c1c]'}
+              disabled:opacity-50`}
+          >
+            {isOptimizing ? "Optimizing..." : "✨ AI Optimize"}
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  const renderAiSuggestionBox = () => {
+    if (!aiSuggestion) return null;
+    return (
+      <div className="mb-8 p-5 bg-indigo-50 border border-indigo-200 rounded-2xl shadow-sm">
+        <h4 className="text-indigo-800 font-bold mb-2 flex items-center gap-2">
+          <span>✨</span> AI Suggestion
+        </h4>
+        <p className="text-indigo-900 text-sm mb-4">{aiSuggestion.reason}</p>
+        <div className="flex gap-3">
+          <button 
+            onClick={applyAiSuggestion}
+            className="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700"
+          >
+            Apply Change
+          </button>
+          <button 
+            onClick={() => setAiSuggestion(null)}
+            className="px-4 py-2 bg-white text-indigo-600 border border-indigo-200 text-sm font-semibold rounded-lg hover:bg-indigo-50"
+          >
+            Dismiss
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderAiError = () => {
+    if (!aiError) return null;
+    return (
+      <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex justify-between items-center">
+        <span>{aiError}</span>
+        <button onClick={() => setAiError("")} className="font-bold">&times;</button>
+      </div>
+    );
+  }
+
   const renderBuilder = () => (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Itinerary Column */}
       <div className="lg:col-span-2 space-y-6">
+        
+        {renderAiError()}
+
+        {canAiGenerate && (
+          <div className="p-6 bg-gradient-to-r from-sky-500 to-indigo-600 rounded-2xl text-white shadow-lg flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-lg mb-1">Generate your itinerary with AI</h3>
+              <p className="text-sky-100 text-sm">Let Gemini build a balanced schedule based on your stops and budget.</p>
+            </div>
+            <button 
+              onClick={handleAiGenerate} 
+              disabled={isGenerating}
+              className="px-5 py-2.5 bg-white text-indigo-600 rounded-xl font-bold text-sm shadow hover:shadow-lg transition-all disabled:opacity-50"
+            >
+              {isGenerating ? "Generating..." : "✨ Generate Now"}
+            </button>
+          </div>
+        )}
+
         {trip.stops.length === 0 ? (
           <div className="p-8 border border-dashed border-slate-300 rounded-2xl text-center bg-white text-slate-500">
             No stops added yet. Search for a city on the right to add your first stop!
@@ -180,7 +352,7 @@ export default function TripBuilderPage() {
                           {act.name}
                         </p>
                         <p className="text-xs text-slate-500 mt-1 pl-4">
-                          {act.category} · {act.durationHours}h · ${act.cost}
+                          Day {act.day || 1} · {act.category} · {act.durationHours}h · ${act.cost}
                         </p>
                       </div>
                       <button onClick={() => deleteActivity(act.id)} className="text-slate-300 hover:text-red-500 text-xl">&times;</button>
@@ -282,44 +454,50 @@ export default function TripBuilderPage() {
   const renderItinerary = () => {
     if (itinerary.length === 0) return <div className="text-center py-10 text-slate-500">No itinerary data. Add stops and activities in the Builder first.</div>;
     return (
-      <div className="space-y-8 max-w-4xl mx-auto">
-        {itinerary.map((dayData, idx) => (
-          <div key={idx} className="relative pl-8">
-            {/* Timeline Line */}
-            <div className="absolute left-3 top-0 bottom-[-2rem] w-px bg-slate-200"></div>
-            
-            {/* Timeline Dot */}
-            <div className="absolute left-[8px] top-1 w-2 h-2 rounded-full bg-sky-500 shadow-[0_0_0_4px_white]"></div>
+      <div className="max-w-4xl mx-auto">
+        {renderHealthCard()}
+        {renderAiError()}
+        {renderAiSuggestionBox()}
 
-            <h3 className="font-display font-semibold text-xl text-slate-800 mb-4">
-              Day {dayData.dayNumber} - {dayData.city.name}
-              {dayData.date && <span className="ml-2 text-sm text-slate-400 font-normal">{new Date(dayData.date).toLocaleDateString()}</span>}
-            </h3>
+        <div className="space-y-8 mt-8">
+          {itinerary.map((dayData, idx) => (
+            <div key={idx} className="relative pl-8">
+              {/* Timeline Line */}
+              <div className="absolute left-3 top-0 bottom-[-2rem] w-px bg-slate-200"></div>
+              
+              {/* Timeline Dot */}
+              <div className="absolute left-[8px] top-1 w-2 h-2 rounded-full bg-sky-500 shadow-[0_0_0_4px_white]"></div>
 
-            {dayData.activities.length === 0 ? (
-              <div className="bg-slate-50 rounded-xl p-4 text-sm text-slate-500 italic border border-slate-100">
-                Free day to explore!
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {dayData.activities.map(act => (
-                  <div key={act.id} className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-start justify-between">
-                    <div>
-                      <p className="font-medium text-slate-800">{act.name}</p>
-                      {act.description && <p className="text-sm text-slate-500 mt-1">{act.description}</p>}
+              <h3 className="font-display font-semibold text-xl text-slate-800 mb-4">
+                Day {dayData.dayNumber} - {dayData.city.name}
+                {dayData.date && <span className="ml-2 text-sm text-slate-400 font-normal">{new Date(dayData.date).toLocaleDateString()}</span>}
+              </h3>
+
+              {dayData.activities.length === 0 ? (
+                <div className="bg-slate-50 rounded-xl p-4 text-sm text-slate-500 italic border border-slate-100">
+                  Free day to explore!
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {dayData.activities.map(act => (
+                    <div key={act.id} className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-start justify-between">
+                      <div>
+                        <p className="font-medium text-slate-800">{act.name}</p>
+                        {act.description && <p className="text-sm text-slate-500 mt-1">{act.description}</p>}
+                      </div>
+                      <div className="text-right">
+                        <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-medium rounded-md mb-2">
+                          {act.category}
+                        </span>
+                        <p className="text-sm font-medium text-slate-700">${act.cost} · {act.durationHours} hrs</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-medium rounded-md mb-2">
-                        {act.category}
-                      </span>
-                      <p className="text-sm font-medium text-slate-700">${act.cost} · {act.durationHours} hrs</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     );
   };
@@ -331,6 +509,8 @@ export default function TripBuilderPage() {
 
     return (
       <div className="max-w-5xl mx-auto">
+        {renderHealthCard()}
+
         {/* Warnings */}
         {budgetData.warnings && budgetData.warnings.length > 0 && (
           <div className="mb-6 space-y-2">

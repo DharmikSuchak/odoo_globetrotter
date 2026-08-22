@@ -1,5 +1,8 @@
 const express = require("express");
 const prisma = require("../lib/prisma");
+const { GoogleGenAI } = require("@google/genai");
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const router = express.Router();
 
@@ -311,6 +314,232 @@ router.get("/:id/budget", async (req, res) => {
   } catch (err) {
     console.error("GET /api/trips/:id/budget error:", err);
     res.status(500).json({ success: false, message: "Failed to fetch budget breakdown" });
+  }
+});
+
+// ── GET /api/trips/:id/health ─────────────────────────────────────────────────
+router.get("/:id/health", async (req, res) => {
+  try {
+    const tripId = req.params.id;
+    const check = await verifyTripOwnership(tripId, req.user.userId);
+    if (check.error) return res.status(check.status).json({ success: false, message: check.error });
+
+    const trip = await prisma.trip.findUnique({
+      where: { id: tripId },
+      include: { stops: { include: { activities: true } } }
+    });
+
+    if (!trip) return res.status(404).json({ success: false, message: "Trip not found" });
+
+    let score = 100;
+    const recommendations = [];
+    let totalSpent = 0;
+    const activitiesByDay = {};
+    const hoursByDay = {};
+
+    trip.stops.forEach((stop, sIdx) => {
+      stop.activities.forEach(act => {
+        const day = act.day || 1;
+        const dayKey = `Stop ${sIdx + 1} - Day ${day}`;
+        totalSpent += act.cost || 0;
+        
+        if (!activitiesByDay[dayKey]) activitiesByDay[dayKey] = 0;
+        activitiesByDay[dayKey]++;
+        
+        if (!hoursByDay[dayKey]) hoursByDay[dayKey] = 0;
+        hoursByDay[dayKey] += act.durationHours || 1;
+      });
+    });
+
+    // Budget Rule
+    if (trip.budget && trip.budget > 0) {
+      if (totalSpent > trip.budget) {
+        score -= 20;
+        recommendations.push("You are over budget. Consider removing or swapping expensive activities.");
+      } else if (totalSpent > trip.budget * 0.9) {
+        score -= 5;
+        recommendations.push("You are very close to your budget limit.");
+      }
+    }
+
+    // Pacing & Density Rules
+    Object.entries(activitiesByDay).forEach(([dayKey, count]) => {
+      if (count > 4) {
+        score -= 10;
+        recommendations.push(`${dayKey} has too many activities (${count}). Consider moving one to a lighter day.`);
+      }
+    });
+
+    Object.entries(hoursByDay).forEach(([dayKey, hours]) => {
+      if (hours > 10) {
+        score -= 15;
+        recommendations.push(`${dayKey} is overloaded with ${hours} hours of activities. Ensure you leave time for rest and travel.`);
+      }
+    });
+
+    if (trip.stops.length > 0 && Object.keys(activitiesByDay).length === 0) {
+      score -= 30;
+      recommendations.push("Your itinerary is empty. Try adding some activities or use the AI Generate tool!");
+    }
+
+    score = Math.max(0, score); // Ensure score doesn't drop below 0
+
+    res.json({ success: true, health: { score, recommendations } });
+  } catch (err) {
+    console.error("GET /api/trips/:id/health error:", err);
+    res.status(500).json({ success: false, message: "Failed to compute trip health" });
+  }
+});
+
+// ── POST /api/trips/:id/ai-generate ───────────────────────────────────────────
+router.post("/:id/ai-generate", async (req, res) => {
+  try {
+    const tripId = req.params.id;
+    const check = await verifyTripOwnership(tripId, req.user.userId);
+    if (check.error) return res.status(check.status).json({ success: false, message: check.error });
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ success: false, message: "Gemini API key is not configured." });
+    }
+
+    const trip = await prisma.trip.findUnique({
+      where: { id: tripId },
+      include: { stops: { include: { city: true } } }
+    });
+
+    if (trip.stops.length === 0) {
+      return res.status(400).json({ success: false, message: "Add at least one stop before generating an itinerary." });
+    }
+
+    // Get all catalog activities
+    const catalog = await prisma.activity.findMany({
+      where: { stopId: null },
+      select: { id: true, name: true, category: true, cost: true, durationHours: true }
+    });
+
+    const prompt = `
+      I am planning a trip with a budget of $${trip.budget || 'flexible'}.
+      Here are the stops:
+      ${trip.stops.map(s => `- Stop ID: ${s.id} in ${s.city.name} (${s.city.country})`).join("\n")}
+      
+      Here is the catalog of available activities in JSON format:
+      ${JSON.stringify(catalog)}
+
+      Your task: Create a balanced itinerary for these stops. 
+      Select activities ONLY from the provided catalog. Do NOT invent activities.
+      Provide 2-3 activities per day for each stop. Assume each stop lasts 2 days for this demo.
+      
+      You must return ONLY a raw JSON array (no markdown code blocks, no text before or after).
+      The array must contain objects with exactly these keys:
+      "stopId" (the ID of the stop), "day" (the day number 1 or 2), and "catalogActivityId" (the ID of the catalog activity).
+      Example: [{"stopId":"...", "day":1, "catalogActivityId":"..."}]
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    let rawJson = response.text;
+    if (rawJson.includes("```json")) {
+      rawJson = rawJson.split("```json")[1].split("```")[0].trim();
+    } else if (rawJson.includes("```")) {
+      rawJson = rawJson.split("```")[1].split("```")[0].trim();
+    }
+
+    let suggestions;
+    try {
+      suggestions = JSON.parse(rawJson.trim());
+    } catch (e) {
+      return res.status(500).json({ success: false, message: "AI returned malformed JSON.", raw: rawJson });
+    }
+
+    // Apply suggestions to the database (clone catalog activities)
+    const createdActivities = [];
+    for (const item of suggestions) {
+      const catalogItem = catalog.find(c => c.id === item.catalogActivityId);
+      if (catalogItem && trip.stops.some(s => s.id === item.stopId)) {
+        const newAct = await prisma.activity.create({
+          data: {
+            stopId: item.stopId,
+            name: catalogItem.name,
+            category: catalogItem.category,
+            cost: catalogItem.cost,
+            durationHours: catalogItem.durationHours,
+            day: item.day
+          }
+        });
+        createdActivities.push(newAct);
+      }
+    }
+
+    res.json({ success: true, message: `Generated ${createdActivities.length} activities.` });
+  } catch (err) {
+    console.error("POST /ai-generate error:", err);
+    res.status(500).json({ success: false, message: "AI Generation failed." });
+  }
+});
+
+// ── POST /api/trips/:id/ai-optimize ───────────────────────────────────────────
+router.post("/:id/ai-optimize", async (req, res) => {
+  try {
+    const tripId = req.params.id;
+    const { warnings } = req.body; // Pass the warnings from the frontend health check
+    
+    const check = await verifyTripOwnership(tripId, req.user.userId);
+    if (check.error) return res.status(check.status).json({ success: false, message: check.error });
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ success: false, message: "Gemini API key is not configured." });
+    }
+
+    const trip = await prisma.trip.findUnique({
+      where: { id: tripId },
+      include: { stops: { include: { activities: true, city: true } } }
+    });
+
+    const prompt = `
+      You are an AI travel assistant. We need to optimize an itinerary.
+      
+      Here is the current itinerary state (JSON):
+      ${JSON.stringify(trip.stops, null, 2)}
+      
+      Here are the health warnings from our system:
+      ${JSON.stringify(warnings || [])}
+
+      Your task: Suggest exactly ONE action to improve this itinerary based on the warnings.
+      If there are too many activities on one day, move one to a lighter day.
+      
+      Return ONLY a raw JSON object (no markdown, no text) with exactly these keys:
+      "action" (should be "move"), 
+      "activityId" (the ID of the activity to move), 
+      "newDay" (the integer day number to move it to), 
+      "reason" (a short sentence explaining why to the user).
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    let rawJson = response.text;
+    if (rawJson.includes("```json")) {
+      rawJson = rawJson.split("```json")[1].split("```")[0].trim();
+    } else if (rawJson.includes("```")) {
+      rawJson = rawJson.split("```")[1].split("```")[0].trim();
+    }
+
+    let suggestion;
+    try {
+      suggestion = JSON.parse(rawJson.trim());
+    } catch (e) {
+      return res.status(500).json({ success: false, message: "AI returned malformed JSON.", raw: rawJson });
+    }
+
+    res.json({ success: true, suggestion });
+  } catch (err) {
+    console.error("POST /ai-optimize error:", err);
+    res.status(500).json({ success: false, message: "AI Optimization failed." });
   }
 });
 

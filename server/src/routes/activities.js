@@ -75,4 +75,43 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// ── PUT /api/activities/:id ───────────────────────────────────────────────────
+// Updates a specific activity (e.g., changing its day, cost, or duration)
+router.put("/:id", async (req, res) => {
+  try {
+    const activityId = req.params.id;
+    const { day, cost, durationHours } = req.body;
+
+    // Verify ownership
+    const activity = await prisma.activity.findUnique({
+      where: { id: activityId },
+      include: {
+        stop: {
+          include: {
+            trip: { select: { userId: true } }
+          }
+        }
+      }
+    });
+
+    if (!activity) return res.status(404).json({ success: false, message: "Activity not found" });
+    if (!activity.stop) return res.status(403).json({ success: false, message: "Cannot modify global catalog activities" });
+    if (activity.stop.trip.userId !== req.user.userId) return res.status(403).json({ success: false, message: "Forbidden" });
+
+    const updated = await prisma.activity.update({
+      where: { id: activityId },
+      data: {
+        day: day !== undefined ? parseInt(day) : undefined,
+        cost: cost !== undefined ? parseFloat(cost) : undefined,
+        durationHours: durationHours !== undefined ? parseFloat(durationHours) : undefined,
+      }
+    });
+
+    res.json({ success: true, activity: updated });
+  } catch (err) {
+    console.error("PUT /api/activities/:id error:", err);
+    res.status(500).json({ success: false, message: "Failed to update activity" });
+  }
+});
+
 module.exports = router;
