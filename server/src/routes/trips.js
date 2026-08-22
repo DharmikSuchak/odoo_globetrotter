@@ -543,4 +543,102 @@ router.post("/:id/ai-optimize", async (req, res) => {
   }
 });
 
+const crypto = require("crypto");
+
+// ── PUT /api/trips/:id/share ──────────────────────────────────────────────────
+router.put("/:id/share", async (req, res) => {
+  try {
+    const tripId = req.params.id;
+    const { isPublic } = req.body;
+    
+    const check = await verifyTripOwnership(tripId, req.user.userId);
+    if (check.error) return res.status(check.status).json({ success: false, message: check.error });
+
+    const trip = await prisma.trip.findUnique({ where: { id: tripId } });
+    
+    let shareSlug = trip.shareSlug;
+    // Generate a slug if we're making it public and it doesn't have one
+    if (isPublic && !shareSlug) {
+      shareSlug = crypto.randomBytes(4).toString("hex") + "-" + Date.now().toString(36).slice(-4);
+    }
+
+    const updated = await prisma.trip.update({
+      where: { id: tripId },
+      data: { isPublic, shareSlug }
+    });
+
+    res.json({ success: true, isPublic: updated.isPublic, shareSlug: updated.shareSlug });
+  } catch (err) {
+    console.error("PUT /api/trips/:id/share error:", err);
+    res.status(500).json({ success: false, message: "Failed to update sharing settings" });
+  }
+});
+
+// ── POST /api/trips/copy/:slug ────────────────────────────────────────────────
+router.post("/copy/:slug", async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const targetUserId = req.user.userId;
+
+    // Find the public trip
+    const sourceTrip = await prisma.trip.findUnique({
+      where: { shareSlug: slug },
+      include: {
+        stops: {
+          include: { activities: true }
+        }
+      }
+    });
+
+    if (!sourceTrip || !sourceTrip.isPublic) {
+      return res.status(404).json({ success: false, message: "Trip not found or not public." });
+    }
+
+    // Create a new trip for the current user
+    const newTrip = await prisma.trip.create({
+      data: {
+        userId: targetUserId,
+        name: `Copy of ${sourceTrip.name}`,
+        description: sourceTrip.description,
+        startDate: sourceTrip.startDate,
+        endDate: sourceTrip.endDate,
+        budget: sourceTrip.budget,
+        isPublic: false
+      }
+    });
+
+    // Deep clone stops and activities
+    for (const stop of sourceTrip.stops) {
+      const newStop = await prisma.stop.create({
+        data: {
+          tripId: newTrip.id,
+          cityId: stop.cityId,
+          startDate: stop.startDate,
+          endDate: stop.endDate,
+          order: stop.order
+        }
+      });
+
+      const activitiesToCreate = stop.activities.map(act => ({
+        stopId: newStop.id,
+        name: act.name,
+        category: act.category,
+        cost: act.cost,
+        durationHours: act.durationHours,
+        day: act.day,
+        description: act.description
+      }));
+
+      if (activitiesToCreate.length > 0) {
+        await prisma.activity.createMany({ data: activitiesToCreate });
+      }
+    }
+
+    res.json({ success: true, tripId: newTrip.id, message: "Trip copied successfully!" });
+  } catch (err) {
+    console.error("POST /api/trips/copy/:slug error:", err);
+    res.status(500).json({ success: false, message: "Failed to copy trip" });
+  }
+});
+
 module.exports = router;

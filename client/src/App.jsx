@@ -8,6 +8,8 @@ import DashboardPage from "./pages/DashboardPage";
 import TripsPage from "./pages/TripsPage";
 import CreateTripPage from "./pages/CreateTripPage";
 import TripBuilderPage from "./pages/TripBuilderPage";
+import PublicTripPage from "./pages/PublicTripPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 /** Redirects already-authenticated users away from auth screens */
@@ -39,7 +41,10 @@ export default function App() {
         }
       />
 
-      {/* ── Authenticated Routes with Sidebar Layout ── */}
+      {/* ── Public Trip Share ────────────────────────────────────────── */}
+      <Route path="/trip/share/:slug" element={<PublicTripPage />} />
+
+      {/* ── Protected Dashboard Routes ─────────────────────────────── */}
       <Route
         element={
           <ProtectedRoute>
@@ -51,6 +56,7 @@ export default function App() {
         <Route path="/trips" element={<TripsPage />} />
         <Route path="/trips/new" element={<CreateTripPage />} />
         <Route path="/trips/:id" element={<TripBuilderPage />} />
+        <Route path="/admin" element={<AdminDashboardPage />} />
       </Route>
 
       {/* Fallback for unknown routes */}

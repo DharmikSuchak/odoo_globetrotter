@@ -7,6 +7,8 @@ const tripsRouter = require("./routes/trips");
 const stopsRouter = require("./routes/stops");
 const citiesRouter = require("./routes/cities");
 const activitiesRouter = require("./routes/activities");
+const publicRouter = require("./routes/public");
+const adminRouter = require("./routes/admin");
 
 const requireAuth = require("./middleware/requireAuth");
 
@@ -34,6 +36,7 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+app.use("/api/public", publicRouter);
 
 // ── Protected routes ──────────────────────────────────────────────────────────
 app.get("/api/me", requireAuth, (req, res) => {
@@ -44,6 +47,7 @@ app.use("/api/trips", requireAuth, tripsRouter);
 app.use("/api/stops", requireAuth, stopsRouter);
 app.use("/api/cities", requireAuth, citiesRouter);
 app.use("/api/activities", requireAuth, activitiesRouter);
+app.use("/api/admin", adminRouter); // requireAuth is applied inside adminRouter or we can just let adminRouter handle it
 
 // ── Fallbacks ─────────────────────────────────────────────────────────────────
 app.get("/", (_req, res) => {

@@ -28,6 +28,10 @@ export default function TripBuilderPage() {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState(null);
   const [aiError, setAiError] = useState("");
+  
+  // Sharing State
+  const [isSharing, setIsSharing] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     fetchTrip();
@@ -124,6 +128,28 @@ export default function TripBuilderPage() {
     } catch (err) {
       alert("Failed to apply suggestion");
     }
+  }
+
+  // ── Share Handler ─────────────────────────────────────────────────────────
+  async function toggleShare() {
+    try {
+      setIsSharing(true);
+      const newStatus = !trip.isPublic;
+      const { data } = await axios.put(`/api/trips/${id}/share`, { isPublic: newStatus });
+      setTrip(prev => ({ ...prev, isPublic: data.isPublic, shareSlug: data.shareSlug }));
+    } catch (err) {
+      alert("Failed to update sharing settings.");
+    } finally {
+      setIsSharing(false);
+    }
+  }
+
+  function copyShareLink() {
+    const url = `${window.location.origin}/trip/share/${trip.shareSlug}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    });
   }
 
   // ── Builder Handlers ────────────────────────────────────────────────────────
@@ -612,10 +638,38 @@ export default function TripBuilderPage() {
         <Link to="/trips" className="text-sm font-medium text-slate-400 hover:text-slate-600 mb-2 inline-block">
           &larr; Back to trips
         </Link>
-        <div className="flex items-end justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <h1 className="font-display font-bold text-3xl text-slate-800">{trip.name}</h1>
             <p className="text-slate-500 mt-1">{trip.description || "No description provided."}</p>
+          </div>
+          
+          <div className="flex flex-col items-end gap-2">
+            <button
+              onClick={toggleShare}
+              disabled={isSharing}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors border shadow-sm disabled:opacity-50
+                ${trip.isPublic 
+                  ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' 
+                  : 'bg-sky-600 border-sky-600 text-white hover:bg-sky-700'
+                }`}
+            >
+              {isSharing ? "Updating..." : trip.isPublic ? "Make Private" : "Share Publicly"}
+            </button>
+            
+            {trip.isPublic && trip.shareSlug && (
+              <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-lg border border-slate-200">
+                <span className="text-xs text-slate-500 font-mono px-2 max-w-[200px] truncate">
+                  {`${window.location.origin}/trip/share/${trip.shareSlug}`}
+                </span>
+                <button 
+                  onClick={copyShareLink}
+                  className="px-3 py-1 bg-white border border-slate-200 rounded text-xs font-medium text-slate-700 hover:bg-slate-50 shadow-sm"
+                >
+                  {copySuccess ? "Copied!" : "Copy"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
