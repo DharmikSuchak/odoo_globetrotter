@@ -2,6 +2,9 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
+const authRouter = require("./routes/auth");
+const requireAuth = require("./middleware/requireAuth");
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -15,7 +18,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ── Routes ────────────────────────────────────────────────────────────────────
+// ── Public routes ─────────────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
   res.json({
     success: true,
@@ -25,17 +28,23 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-// Placeholder route root
-app.get("/", (_req, res) => {
-  res.json({ message: "Welcome to GlobeTrotter API. Use /api/health to check status." });
+app.use("/api/auth", authRouter);
+
+// ── Protected routes ──────────────────────────────────────────────────────────
+app.get("/api/me", requireAuth, (req, res) => {
+  res.json({ success: true, user: req.user });
 });
 
-// 404 handler
+// ── Fallbacks ─────────────────────────────────────────────────────────────────
+app.get("/", (_req, res) => {
+  res.json({ message: "GlobeTrotter API. See /api/health." });
+});
+
 app.use((_req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
 });
 
-// Global error handler
+// Global error handler — must be last and have four params
 app.use((err, _req, res, _next) => {
   console.error("Unhandled error:", err);
   res.status(500).json({ success: false, message: "Internal server error" });
