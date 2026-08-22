@@ -3,7 +3,11 @@ import { useAuth } from "./context/AuthContext";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
+import DashboardLayout from "./layouts/DashboardLayout";
 import DashboardPage from "./pages/DashboardPage";
+import TripsPage from "./pages/TripsPage";
+import CreateTripPage from "./pages/CreateTripPage";
+import TripBuilderPage from "./pages/TripBuilderPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 /** Redirects already-authenticated users away from auth screens */
@@ -35,14 +39,19 @@ export default function App() {
         }
       />
 
+      {/* ── Authenticated Routes with Sidebar Layout ── */}
       <Route
-        path="/dashboard"
         element={
           <ProtectedRoute>
-            <DashboardPage />
+            <DashboardLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/trips" element={<TripsPage />} />
+        <Route path="/trips/new" element={<CreateTripPage />} />
+        <Route path="/trips/:id" element={<TripBuilderPage />} />
+      </Route>
 
       {/* Fallback for unknown routes */}
       <Route path="*" element={<Navigate to="/" replace />} />

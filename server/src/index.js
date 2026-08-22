@@ -3,6 +3,11 @@ const express = require("express");
 const cors = require("cors");
 
 const authRouter = require("./routes/auth");
+const tripsRouter = require("./routes/trips");
+const stopsRouter = require("./routes/stops");
+const citiesRouter = require("./routes/cities");
+const activitiesRouter = require("./routes/activities");
+
 const requireAuth = require("./middleware/requireAuth");
 
 const app = express();
@@ -34,6 +39,11 @@ app.use("/api/auth", authRouter);
 app.get("/api/me", requireAuth, (req, res) => {
   res.json({ success: true, user: req.user });
 });
+
+app.use("/api/trips", requireAuth, tripsRouter);
+app.use("/api/stops", requireAuth, stopsRouter);
+app.use("/api/cities", requireAuth, citiesRouter);
+app.use("/api/activities", requireAuth, activitiesRouter);
 
 // ── Fallbacks ─────────────────────────────────────────────────────────────────
 app.get("/", (_req, res) => {
