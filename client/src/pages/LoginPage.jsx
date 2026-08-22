@@ -70,9 +70,9 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#111827] flex items-center justify-center px-4 relative overflow-hidden">
       {/* ── Animated background blobs ─────────────────────────────── */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-5%] w-[512px] h-[512px] rounded-full bg-purple-600/30 blur-[128px] animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-5%] w-[512px] h-[512px] rounded-full bg-pink-600/25 blur-[128px] animate-pulse [animation-delay:1.5s]" />
-        <div className="absolute top-[40%] left-[50%] -translate-x-1/2 w-[400px] h-[400px] rounded-full bg-indigo-600/20 blur-[128px] animate-pulse [animation-delay:3s]" />
+        <div className="absolute top-[-10%] left-[-5%] w-[512px] h-[512px] rounded-full bg-sky-600/30 blur-[128px] animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[512px] h-[512px] rounded-full bg-blue-600/25 blur-[128px] animate-pulse [animation-delay:1.5s]" />
+        <div className="absolute top-[40%] left-[50%] -translate-x-1/2 w-[400px] h-[400px] rounded-full bg-slate-600/20 blur-[128px] animate-pulse [animation-delay:3s]" />
       </div>
 
       {/* ── Glass card ────────────────────────────────────────────── */}
@@ -82,7 +82,7 @@ export default function LoginPage() {
           <Link to="/" className="inline-flex items-center gap-2 group">
             <span className="text-3xl">🌍</span>
             <span className="font-display font-bold text-2xl text-white tracking-tight">
-              Globe<span className="bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">Trotter</span>
+              Globe<span className="bg-gradient-to-r from-sky-400 via-sky-500 to-blue-400 bg-clip-text text-transparent">Trotter</span>
             </span>
           </Link>
           <p className="mt-2 text-white/50 text-sm font-sans">Sign in to your account</p>
@@ -99,7 +99,7 @@ export default function LoginPage() {
         >
           {/* Hero title */}
           <h1 className="font-display font-extrabold text-4xl text-center mb-2">
-            <span className="bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-sky-400 via-sky-500 to-blue-400 bg-clip-text text-transparent">
               Welcome Back
             </span>
           </h1>
@@ -132,7 +132,7 @@ export default function LoginPage() {
                 placeholder="you@example.com"
                 className={`w-full rounded-xl px-4 py-3 text-sm font-sans bg-white/10 text-white placeholder-white/30
                   border transition-all duration-200 outline-none
-                  focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50
+                  focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500/50
                   ${fieldErrors.email ? "border-red-500/60" : "border-white/20"}`}
               />
               {fieldErrors.email && (
@@ -156,7 +156,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   className={`w-full rounded-xl pl-4 pr-12 py-3 text-sm font-sans bg-white/10 text-white placeholder-white/30
                     border transition-all duration-200 outline-none
-                    focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50
+                    focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500/50
                     ${fieldErrors.password ? "border-red-500/60" : "border-white/20"}`}
                 />
                 <button
@@ -188,8 +188,8 @@ export default function LoginPage() {
               type="submit"
               disabled={isSubmitting}
               className="w-full py-3.5 rounded-xl font-semibold text-white text-sm
-                bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600
-                hover:shadow-lg hover:shadow-purple-500/30 hover:-translate-y-0.5
+                bg-gradient-to-r from-sky-500 via-sky-600 to-blue-700
+                hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5
                 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
             >
               {isSubmitting ? "Signing in…" : "Sign in"}
@@ -198,7 +198,7 @@ export default function LoginPage() {
 
           <p className="mt-6 text-center text-sm text-white/50">
             Don't have an account?{" "}
-            <Link to="/signup" className="text-purple-400 hover:text-purple-300 font-medium transition-colors">
+            <Link to="/signup" className="text-sky-400 hover:text-sky-300 font-medium transition-colors">
               Create one
             </Link>
           </p>

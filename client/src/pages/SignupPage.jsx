@@ -83,7 +83,7 @@ export default function SignupPage() {
   function inputClass(fieldName, isPassword = false) {
     return `w-full rounded-xl pl-4 ${isPassword ? 'pr-12' : 'pr-4'} py-3 text-sm font-sans bg-white/10 text-white placeholder-white/30
       border transition-all duration-200 outline-none
-      focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50
+      focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500/50
       ${fieldErrors[fieldName] ? "border-red-500/60" : "border-white/20"}`;
   }
 
@@ -91,9 +91,9 @@ export default function SignupPage() {
     <div className="min-h-screen bg-[#111827] flex items-center justify-center px-4 relative overflow-hidden py-12">
       {/* ── Animated background blobs ─────────────────────────────── */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[-5%] right-[-5%] w-[512px] h-[512px] rounded-full bg-purple-600/30 blur-[128px] animate-pulse" />
-        <div className="absolute bottom-[-5%] left-[-5%] w-[512px] h-[512px] rounded-full bg-pink-600/25 blur-[128px] animate-pulse [animation-delay:1.5s]" />
-        <div className="absolute top-[50%] left-[40%] w-[400px] h-[400px] rounded-full bg-indigo-600/20 blur-[128px] animate-pulse [animation-delay:3s]" />
+        <div className="absolute top-[-5%] right-[-5%] w-[512px] h-[512px] rounded-full bg-sky-600/30 blur-[128px] animate-pulse" />
+        <div className="absolute bottom-[-5%] left-[-5%] w-[512px] h-[512px] rounded-full bg-blue-600/25 blur-[128px] animate-pulse [animation-delay:1.5s]" />
+        <div className="absolute top-[50%] left-[40%] w-[400px] h-[400px] rounded-full bg-slate-600/20 blur-[128px] animate-pulse [animation-delay:3s]" />
       </div>
 
       {/* ── Glass card ────────────────────────────────────────────── */}
@@ -103,7 +103,7 @@ export default function SignupPage() {
           <Link to="/" className="inline-flex items-center gap-2">
             <span className="text-3xl">🌍</span>
             <span className="font-display font-bold text-2xl text-white tracking-tight">
-              Globe<span className="bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">Trotter</span>
+              Globe<span className="bg-gradient-to-r from-sky-400 via-sky-500 to-blue-400 bg-clip-text text-transparent">Trotter</span>
             </span>
           </Link>
           <p className="mt-2 text-white/50 text-sm font-sans">Create your free account</p>
@@ -119,7 +119,7 @@ export default function SignupPage() {
           }}
         >
           <h1 className="font-display font-extrabold text-4xl text-center mb-2">
-            <span className="bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-sky-400 via-sky-500 to-blue-400 bg-clip-text text-transparent">
               Start Planning
             </span>
           </h1>
@@ -256,8 +256,8 @@ export default function SignupPage() {
               type="submit"
               disabled={isSubmitting}
               className="w-full py-3.5 rounded-xl font-semibold text-white text-sm
-                bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600
-                hover:shadow-lg hover:shadow-purple-500/30 hover:-translate-y-0.5
+                bg-gradient-to-r from-sky-500 via-sky-600 to-blue-700
+                hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5
                 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
             >
               {isSubmitting ? "Creating account…" : "Create account"}
@@ -266,7 +266,7 @@ export default function SignupPage() {
 
           <p className="mt-6 text-center text-sm text-white/50">
             Already have an account?{" "}
-            <Link to="/login" className="text-purple-400 hover:text-purple-300 font-medium transition-colors">
+            <Link to="/login" className="text-sky-400 hover:text-sky-300 font-medium transition-colors">
               Sign in
             </Link>
           </p>
