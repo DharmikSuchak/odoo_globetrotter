@@ -36,7 +36,7 @@ export default function TripsPage() {
       setTrips(trips.filter(t => t.id !== tripId));
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Failed to delete trip");
+      setError(err.response?.data?.message || "Failed to delete trip");
     } finally {
       setDeletingId(null);
     }
@@ -51,7 +51,7 @@ export default function TripsPage() {
         </div>
         <Link 
           to="/trips/new"
-          className="inline-flex items-center justify-center px-5 py-2.5 rounded-full bg-sky-600 text-white font-medium hover:bg-sky-700 hover:shadow-md hover:shadow-sky-600/20 transition-all duration-200"
+          className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-sky-600 text-white font-medium hover:bg-sky-700 hover:shadow-md hover:shadow-sky-600/20 transition-all duration-200"
         >
           <span>➕</span> <span className="ml-2">Plan New Trip</span>
         </Link>
@@ -74,7 +74,7 @@ export default function TripsPage() {
           {trips.map((trip) => (
             <div 
               key={trip.id} 
-              className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow"
+              className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center justify-between hover:shadow-md hover:-translate-y-1 transition-all duration-300"
             >
               <div className="flex items-center gap-5">
                 <div className="h-12 w-12 bg-sky-50 rounded-full flex items-center justify-center text-2xl">
@@ -95,14 +95,14 @@ export default function TripsPage() {
               <div className="flex items-center gap-3">
                 <Link 
                   to={`/trips/${trip.id}`}
-                  className="px-4 py-2 text-sm font-medium text-sky-700 bg-sky-50 rounded-full hover:bg-sky-100 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-sky-700 bg-sky-50 rounded-xl hover:bg-sky-100 transition-colors"
                 >
                   Edit / Build
                 </Link>
                 <button
                   onClick={() => handleDelete(trip.id)}
                   disabled={deletingId === trip.id}
-                  className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-full hover:bg-red-100 transition-colors disabled:opacity-50"
+                  className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-xl hover:bg-red-100 transition-colors disabled:opacity-50"
                 >
                   {deletingId === trip.id ? "..." : "Delete"}
                 </button>

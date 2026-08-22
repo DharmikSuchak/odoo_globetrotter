@@ -33,6 +33,9 @@ export default function TripBuilderPage() {
   const [isSharing, setIsSharing] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
+  // Global Action Error (to replace alerts)
+  const [actionError, setActionError] = useState("");
+
   useEffect(() => {
     fetchTrip();
     fetchHealth();
@@ -126,7 +129,7 @@ export default function TripBuilderPage() {
       await fetchHealth();
       if (activeTab === "itinerary") await fetchItinerary();
     } catch (err) {
-      alert("Failed to apply suggestion");
+      setActionError("Failed to apply suggestion");
     }
   }
 
@@ -138,7 +141,7 @@ export default function TripBuilderPage() {
       const { data } = await axios.put(`/api/trips/${id}/share`, { isPublic: newStatus });
       setTrip(prev => ({ ...prev, isPublic: data.isPublic, shareSlug: data.shareSlug }));
     } catch (err) {
-      alert("Failed to update sharing settings.");
+      setActionError("Failed to update sharing settings.");
     } finally {
       setIsSharing(false);
     }
@@ -175,7 +178,7 @@ export default function TripBuilderPage() {
       fetchTrip();
     } catch (err) {
       console.error(err);
-      alert("Failed to add stop");
+      setActionError("Failed to add stop");
     }
   }
 
@@ -186,7 +189,7 @@ export default function TripBuilderPage() {
       fetchTrip();
     } catch (err) {
       console.error(err);
-      alert("Failed to delete stop");
+      setActionError("Failed to delete stop");
     }
   }
 
@@ -211,7 +214,7 @@ export default function TripBuilderPage() {
       fetchHealth(); // refresh health score
     } catch (err) {
       console.error(err);
-      alert("Failed to add activity");
+      setActionError("Failed to add activity");
     }
   }
 
@@ -223,7 +226,7 @@ export default function TripBuilderPage() {
       fetchHealth();
     } catch (err) {
       console.error(err);
-      alert("Failed to delete activity");
+      setActionError("Failed to delete activity");
     }
   }
 
@@ -347,8 +350,8 @@ export default function TripBuilderPage() {
           </div>
         ) : (
           trip.stops.map((stop, index) => (
-            <div key={stop.id} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-              <div className="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
+            <div key={stop.id} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+              <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <div className="h-8 w-8 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-sm">
                     {index + 1}
@@ -366,7 +369,7 @@ export default function TripBuilderPage() {
                 </button>
               </div>
 
-              <div className="p-4 space-y-3">
+              <div className="p-6 space-y-4">
                 {stop.activities.length === 0 ? (
                   <p className="text-sm text-slate-500 italic">No activities planned.</p>
                 ) : (
@@ -695,6 +698,13 @@ export default function TripBuilderPage() {
           Budget Breakdown
         </button>
       </div>
+
+      {actionError && (
+        <div className="mb-6 p-4 rounded-xl bg-red-50 text-red-600 border border-red-100 flex justify-between items-center">
+          <span>{actionError}</span>
+          <button onClick={() => setActionError("")} className="text-red-400 hover:text-red-600 text-lg font-bold">&times;</button>
+        </div>
+      )}
 
       {activeTab === "builder" && renderBuilder()}
       {activeTab === "itinerary" && renderItinerary()}

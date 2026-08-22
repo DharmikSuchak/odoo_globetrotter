@@ -14,7 +14,7 @@
     "studio": "prisma studio"
   },
   "dependencies": {
-    "@google/genai": "^0.1.2",
+    "@google/genai": "latest",
     "@prisma/client": "^5.14.0",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",

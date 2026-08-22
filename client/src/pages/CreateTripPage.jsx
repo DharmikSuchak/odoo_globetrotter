@@ -57,7 +57,7 @@ export default function CreateTripPage() {
         </div>
       </header>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
+      <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
         {error && (
           <div className="p-4 rounded-xl bg-red-50 text-red-600 border border-red-100 mb-6 text-sm">
             {error}
@@ -150,14 +150,14 @@ export default function CreateTripPage() {
         <div className="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">
           <Link 
             to="/trips"
-            className="px-5 py-2.5 rounded-full text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+            className="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
           >
             Cancel
           </Link>
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2.5 rounded-full text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:transform-none"
+            className="px-6 py-2.5 rounded-xl text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:transform-none"
           >
             {loading ? "Creating..." : "Create & Start Building"}
           </button>
