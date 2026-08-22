@@ -1,4 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
+const bcrypt = require("bcrypt");
 const prisma = new PrismaClient();
 
 // ── City catalog ──────────────────────────────────────────────────────────────
@@ -524,6 +525,29 @@ const activities = [
 async function main() {
   console.log("🌱 Seeding database...\n");
 
+  // ── 0. Seed admin account ──────────────────────────────────────────────────
+  const ADMIN_EMAIL    = "admin@globetrotter.dev";
+  const ADMIN_PASSWORD = "GlobeTrotter@2026!";
+  const ADMIN_NAME     = "Admin";
+
+  const hashedAdminPassword = await bcrypt.hash(ADMIN_PASSWORD, 12);
+
+  await prisma.user.upsert({
+    where: { email: ADMIN_EMAIL },
+    update: { role: "ADMIN" }, // Ensure role stays ADMIN even on re-seed
+    create: {
+      name: ADMIN_NAME,
+      email: ADMIN_EMAIL,
+      password: hashedAdminPassword,
+      role: "ADMIN",
+    },
+  });
+
+  console.log("👤 Admin account ready:");
+  console.log(`   Email:    ${ADMIN_EMAIL}`);
+  console.log(`   Password: ${ADMIN_PASSWORD}`);
+  console.log(`   Role:     ADMIN\n`);
+
   // 1. Upsert cities
   console.log(`📍 Seeding ${cities.length} cities...`);
   const cityMap = {}; // name → id
@@ -542,14 +566,27 @@ async function main() {
   console.log(`\n🎯 Seeding ${activities.length} catalog activities...`);
 
   for (const act of activities) {
-    const { cityName, ...actData } = act;
-    await prisma.activity.create({
-      data: {
-        ...actData,
-        stopId: null, // catalog item — not tied to any trip/stop
-      },
+    const existing = await prisma.activity.findFirst({
+      where: { name: act.name, stopId: null }
     });
-    process.stdout.write(`   ✓ [${act.category.padEnd(12)}] ${act.name}\n`);
+    
+    if (existing) {
+      await prisma.activity.update({
+        where: { id: existing.id },
+        data: {
+          ...act,
+          stopId: null
+        }
+      });
+    } else {
+      await prisma.activity.create({
+        data: {
+          ...act,
+          stopId: null
+        },
+      });
+    }
+    process.stdout.write(`   ✓ [${act.category.padEnd(12)}] ${act.name} (${act.cityName})\n`);
   }
 
   console.log("\n✅ Seeding complete!");

@@ -10,12 +10,22 @@ import CreateTripPage from "./pages/CreateTripPage";
 import TripBuilderPage from "./pages/TripBuilderPage";
 import PublicTripPage from "./pages/PublicTripPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import ProfilePage from "./pages/ProfilePage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-/** Redirects already-authenticated users away from auth screens */
+/** Redirects authenticated users away from auth screens.
+ *  Admins land on /admin; regular users land on /dashboard. */
 function PublicOnlyRoute({ children }) {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : children;
+  const { isAuthenticated, currentUser } = useAuth();
+  if (!isAuthenticated) return children;
+  return <Navigate to={currentUser?.role === "ADMIN" ? "/admin" : "/dashboard"} replace />;
+}
+
+/** Blocks admin users from regular-user pages — sends them to /admin. */
+function UserOnlyRoute({ children }) {
+  const { currentUser } = useAuth();
+  if (currentUser?.role === "ADMIN") return <Navigate to="/admin" replace />;
+  return children;
 }
 
 export default function App() {
@@ -52,11 +62,12 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/trips" element={<TripsPage />} />
-        <Route path="/trips/new" element={<CreateTripPage />} />
-        <Route path="/trips/:id" element={<TripBuilderPage />} />
+        <Route path="/dashboard" element={<UserOnlyRoute><DashboardPage /></UserOnlyRoute>} />
+        <Route path="/trips" element={<UserOnlyRoute><TripsPage /></UserOnlyRoute>} />
+        <Route path="/trips/new" element={<UserOnlyRoute><CreateTripPage /></UserOnlyRoute>} />
+        <Route path="/trips/:id" element={<UserOnlyRoute><TripBuilderPage /></UserOnlyRoute>} />
         <Route path="/admin" element={<AdminDashboardPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
       </Route>
 
       {/* Fallback for unknown routes */}

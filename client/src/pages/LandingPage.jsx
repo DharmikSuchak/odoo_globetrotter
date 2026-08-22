@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 
 // ── Destination data for the animated cards ───────────────────────────────────
@@ -138,24 +139,17 @@ export default function LandingPage() {
         </div>
         <div className="flex items-center gap-3">
           <ApiStatusBadge />
-          <button id="nav-login-btn" className="btn-ghost text-sm py-2 px-4">
+          <Link id="nav-login-btn" to="/login" className="btn-ghost text-sm py-2 px-4 inline-block">
             Log in
-          </button>
-          <button id="nav-signup-btn" className="btn-primary text-sm py-2 px-4">
+          </Link>
+          <Link id="nav-signup-btn" to="/signup" className="btn-primary text-sm py-2 px-4 inline-block">
             Get Started
-          </button>
+          </Link>
         </div>
       </nav>
 
       {/* ── Hero ──────────────────────────────────────────────────── */}
       <section className="relative z-10 max-w-7xl mx-auto px-6 pt-24 pb-32 text-center">
-        <div
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-300 text-sm font-medium mb-8"
-          style={{ opacity: 0, animation: "fadeUp 0.6s ease-out 100ms forwards" }}
-        >
-          <span>✨</span>
-          <span>Powered by Google Gemini AI</span>
-        </div>
 
         <h1
           className="font-display font-extrabold text-5xl md:text-7xl leading-[1.1] mb-6 text-white"
@@ -175,15 +169,12 @@ export default function LandingPage() {
         </p>
 
         <div
-          className="flex flex-col sm:flex-row items-center justify-center gap-4"
+          className="flex items-center justify-center"
           style={{ opacity: 0, animation: "fadeUp 0.6s ease-out 500ms forwards" }}
         >
-          <button id="hero-cta-primary" className="btn-primary text-base px-8 py-4 w-full sm:w-auto">
+          <Link id="hero-cta-primary" to="/signup" className="btn-primary text-base px-8 py-4 inline-block text-center">
             🚀 Start Planning Free
-          </button>
-          <button id="hero-cta-demo" className="btn-ghost text-base px-8 py-4 w-full sm:w-auto">
-            🎬 Watch Demo
-          </button>
+          </Link>
         </div>
 
         {/* Stats row */}
@@ -258,9 +249,9 @@ export default function LandingPage() {
           <p className="text-white/50 mb-8 max-w-lg mx-auto">
             Join thousands of travellers building smarter, more memorable journeys with GlobeTrotter.
           </p>
-          <button id="cta-bottom-btn" className="btn-primary text-lg px-10 py-4">
+          <Link id="cta-bottom-btn" to="/signup" className="btn-primary text-lg px-10 py-4 inline-block">
             ✈️ Create Your First Trip
-          </button>
+          </Link>
         </div>
       </section>
 
@@ -270,14 +261,8 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <span>🌍</span>
             <span className="font-display font-semibold text-white/50">GlobeTrotter</span>
-            <span>·</span>
-            <span>Hackathon MVP 2026</span>
           </div>
-          <div className="flex items-center gap-6">
-            <span>Built with React + Vite + Tailwind</span>
-            <span>·</span>
-            <span>API: Express + Prisma + PostgreSQL</span>
-          </div>
+          <span>Built by Dharmik</span>
         </div>
       </footer>
     </div>

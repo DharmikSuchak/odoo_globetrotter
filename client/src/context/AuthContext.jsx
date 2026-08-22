@@ -33,10 +33,15 @@ export function AuthProvider({ children }) {
     setCurrentUser(null);
   }, []);
 
+  /** Merges a partial user update into the current user object in-memory. */
+  const updateUser = useCallback((partialUser) => {
+    setCurrentUser((prev) => prev ? { ...prev, ...partialUser } : prev);
+  }, []);
+
   const isAuthenticated = Boolean(inMemoryToken && currentUser);
 
   return (
-    <AuthContext.Provider value={{ currentUser, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ currentUser, isAuthenticated, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -72,4 +72,34 @@ router.get("/analytics", requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// ── GET /api/admin/users ──────────────────────────────────────────────────────
+// Returns a list of all registered users for the admin panel (read-only)
+router.get("/users", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        // Count trips without fetching them all
+        _count: { select: { trips: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // Flatten _count for a cleaner API response
+    const userList = users.map(({ _count, ...user }) => ({
+      ...user,
+      tripCount: _count.trips,
+    }));
+
+    res.json({ success: true, users: userList });
+  } catch (err) {
+    console.error("GET /api/admin/users error:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch users" });
+  }
+});
+
 module.exports = router;

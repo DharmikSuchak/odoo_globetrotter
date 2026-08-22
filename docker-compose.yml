@@ -54,6 +54,7 @@ services:
       REDIS_HOST: redis
     ports:
       - "5000:5000"
+      
     volumes:
       - ./server:/app
       - node_modules_server:/app/node_modules

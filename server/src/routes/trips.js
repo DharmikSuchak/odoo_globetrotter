@@ -411,10 +411,15 @@ router.post("/:id/ai-generate", async (req, res) => {
       return res.status(400).json({ success: false, message: "Add at least one stop before generating an itinerary." });
     }
 
-    // Get all catalog activities
+    const stopCityNames = trip.stops.map(s => s.city.name);
+
+    // Get filtered catalog activities
     const catalog = await prisma.activity.findMany({
-      where: { stopId: null },
-      select: { id: true, name: true, category: true, cost: true, durationHours: true }
+      where: { 
+        stopId: null,
+        cityName: { in: stopCityNames }
+      },
+      select: { id: true, name: true, category: true, cost: true, durationHours: true, cityName: true }
     });
 
     const prompt = `

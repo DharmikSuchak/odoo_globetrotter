@@ -9,6 +9,7 @@ const citiesRouter = require("./routes/cities");
 const activitiesRouter = require("./routes/activities");
 const publicRouter = require("./routes/public");
 const adminRouter = require("./routes/admin");
+const profileRouter = require("./routes/profile");
 
 const requireAuth = require("./middleware/requireAuth");
 
@@ -22,8 +23,9 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Increase JSON limit to handle base64-encoded photo uploads (raw image < 2MB ≈ ~3MB base64)
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // ── Public routes ─────────────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
@@ -47,7 +49,8 @@ app.use("/api/trips", requireAuth, tripsRouter);
 app.use("/api/stops", requireAuth, stopsRouter);
 app.use("/api/cities", requireAuth, citiesRouter);
 app.use("/api/activities", requireAuth, activitiesRouter);
-app.use("/api/admin", adminRouter); // requireAuth is applied inside adminRouter or we can just let adminRouter handle it
+app.use("/api/profile", requireAuth, profileRouter);
+app.use("/api/admin", adminRouter); // requireAuth is applied inside admin routes
 
 // ── Fallbacks ─────────────────────────────────────────────────────────────────
 app.get("/", (_req, res) => {

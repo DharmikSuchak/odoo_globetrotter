@@ -36,6 +36,7 @@ model User {
   email     String   @unique
   password  String
   role      Role     @default(USER)
+  photoUrl  String?  // base64 data URI or external URL
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -60,6 +61,7 @@ model Trip {
   user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   stops Stop[]
 
+  @@index([userId])
   @@map("trips")
 }
 
@@ -76,6 +78,7 @@ model Stop {
   city       City       @relation(fields: [cityId], references: [id])
   activities Activity[]
 
+  @@index([tripId])
   @@map("stops")
 }
 
@@ -100,6 +103,7 @@ model City {
 model Activity {
   id            String           @id @default(cuid())
   stopId        String?          // nullable — catalog items have no stop
+  cityName      String?          // nullable — ties catalog items to a city
   name          String
   category      ActivityCategory
   cost          Float            @default(0)
@@ -111,5 +115,6 @@ model Activity {
 
   stop Stop? @relation(fields: [stopId], references: [id], onDelete: Cascade)
 
+  @@index([stopId])
   @@map("activities")
 }
